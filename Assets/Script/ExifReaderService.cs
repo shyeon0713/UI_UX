@@ -1,3 +1,4 @@
+using UnityEngine;
 using System.Linq;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
