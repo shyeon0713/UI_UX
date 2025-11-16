@@ -541,6 +541,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 --- !u!1 &746981634
 =======
@@ -730,6 +731,8 @@ CanvasRenderer:
 <<<<<<< Updated upstream
   m_GameObject: {fileID: 746981634}
   m_CullTransparentMesh: 1
+=======
+>>>>>>> parent of 67d09ee (2025117)
 =======
 >>>>>>> parent of 67d09ee (2025117)
 =======
@@ -1208,6 +1211,7 @@ Canvas:
   m_TargetDisplay: 0
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 --- !u!114 &1477445294
 MonoBehaviour:
@@ -1632,6 +1636,8 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1515004486}
   m_CullTransparentMesh: 1
+=======
+>>>>>>> parent of 67d09ee (2025117)
 =======
 >>>>>>> parent of 67d09ee (2025117)
 =======
@@ -2148,6 +2154,7 @@ CanvasRenderer:
   m_CullTransparentMesh: 1
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 --- !u!1 &2041550322
 GameObject:
   m_ObjectHideFlags: 0
@@ -2316,6 +2323,8 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 32e6b3e8f487a0f4e8bcf1b5b7c6a31a, type: 3}
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> parent of 67d09ee (2025117)
 =======
 >>>>>>> parent of 67d09ee (2025117)
 =======
