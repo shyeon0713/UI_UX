@@ -7,22 +7,33 @@ using System.Data.SqlClient;
 
 public class CalenderUI : MonoBehaviour
 {
-    [Header("UI reference")]
-    public TextMeshProUGUI monthText;
-    public Transform datesGrid;
+    [Header("Prefab")]
     public GameObject daybuttonPrefab;
+    public Transform datesGrid;
 
-    private DateTime currentDate;  // �޷¿� �ʿ��� ��� ��ɿ� ����
+    [Header("UI reference")]
+    public TMP_Text monthText;
+    public TMP_Text Daytext;
+
+    [Header("SelectMonth/Year")]
+    public Button premonth;
+    public Button nextmonth;
+    //추후에 팝업형식의 달력을 띄워 원하는 날짜를 직접 선택할 수 있도록 수정
+
+   // public Button nextyear;  년을 변경하는 버튼 -> 팝업으로 수정? 아님 버튼으로 수정?
+   // public Button preyear;
+
+    private DateTime currentDate;  // 현재 표시 중인 년/월
     // using System;
 
     private List<Button> pool = new List<Button>();  //pool ����Ʈ�� ��ư���� ����
                                                      // ��ư ���ġ�̱� ������
+    const int maxSlots = 42; // 6주 * 7일 -> const로 선언
 
-
-    #region -
+    #region - 풀링 
     void InitializePool()
     {
-        int maxSlots = 42; // 6�� * 7��
+    
 
         for (int i = 0; i < maxSlots; i++)
         {
@@ -31,17 +42,27 @@ public class CalenderUI : MonoBehaviour
 
             pool.Add(btn);
 
-            obj.SetActive(false);  //ó������ �� ��Ȱ��ȭ ���ѳ���
-
+            obj.SetActive(false);  //처음에 전부 비활성화
         }
+    }
+
+    void Awake()
+    {
+        currentDate = DateTime.Today; // 시작은 오늘 기준
+        InitializePool();
+        
     }
 
     #endregion
     private void Start()
     {
-        currentDate = DateTime.Now; //���� date�� ����
+        currentDate = DateTime.Now; //DateTime 활용
         GenerateCalender(currentDate);
+
+        premonth.onClick.AddListener(PreMonth); //이전 달 버튼 리스너 추가
+        nextmonth.onClick.AddListener(NextMonth); // 다음 달 버튼 리스너 추가
     }
+
 
     public void NextMonth()  //��ư�̶� ����
     {
@@ -55,11 +76,11 @@ public class CalenderUI : MonoBehaviour
         GenerateCalender(currentDate);
     }
 
-    #region - 
+    #region - 캘린더 버튼 배치
     void GenerateCalender(DateTime date)
     {
-        monthText.text = $"{date.Year}";  // �ش�κ� �����ʿ�
-        //- ���� ����� ǥ��
+        monthText.text = $"{date.Month + "월"}";  // 월 표시
+        // 추후에 문자형식으로 변경
 
         DateTime firstday = new DateTime(date.Year, date.Month, 1);  //���۳�¥
         int startday = (int)firstday.DayOfWeek;
@@ -67,12 +88,12 @@ public class CalenderUI : MonoBehaviour
 
         foreach (var btn in pool)  // 1. ��ü ��Ȱ��ȭ
 
-            btn.gameObject.SetActive(false);  // Destroy���ٴ� SetActiveȰ���Ͽ� ��Ȱ��/Ȱ����Ű��
+            btn.gameObject.SetActive(false);  // Destroy ->  SetActive활용
 
         int index = 0; //poolindex �ʱ�ȭ
 
 
-        for (int i = 0; i < startday; i++)   // ��ĭ ó���ϱ� (����¥ ����)
+        for (int i = 0; i < startday; i++)   // 빈칸처리
         {
             pool[index].gameObject.SetActive(true);
             pool[index].GetComponentInChildren<TMP_Text>().text = "";
@@ -81,7 +102,7 @@ public class CalenderUI : MonoBehaviour
 
         }
 
-        // ��¥ ä���
+        // 날짜 배치
         for (int day = 1; day <= dayInMonth; day++)
         {
             var btn = pool[index];
@@ -89,7 +110,7 @@ public class CalenderUI : MonoBehaviour
 
             btn.GetComponentInChildren<TMP_Text>().text = day.ToString();
 
-            // ���� ��¥ ���� -> �۾��� ����
+            //오늘 요일 표시
             if (date == DateTime.Now.Date && day == DateTime.Now.Day)
             {
                 btn.GetComponent<Image>().color = new Color(1f, 0.8f, 0.8f);
