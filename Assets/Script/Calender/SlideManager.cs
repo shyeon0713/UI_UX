@@ -1,12 +1,16 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using System.Collections;
+using UnityEngine.UI;
 public class SlideManager : MonoBehaviour, IDragHandler, IEndDragHandler
 {
     public RectTransform calendarP;
     public RectTransform diagramP;
 
+    public ScrollRect scrollRect;
+
     private float screenWidth;
+
     private Vector2 calendarStartPos;
     private Vector2 diagramStartPos;
 
