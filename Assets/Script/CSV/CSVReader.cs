@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;  // 파일 저장 /읽기용
 using UnityEngine;
 using UnityEngine.Networking;  //  csv파일 다운로드
+using System.Globalization;
 using System.Linq; // Sum 계산을 위해 사용
+using System.Text.RegularExpressions;
 
 
 // 모바일 환경에서 추후에 csv파일을 전달받을 수 있는 방식으로 변경
@@ -15,12 +17,12 @@ using System.Linq; // Sum 계산을 위해 사용
 [System.Serializable]
 public class Expenditure   
 {
-    public string date;  //결제일자
-    public string time;  //결제시간
-    public string classification;  //매출구분
-    public int expendituredetails;  //지출내역
-    public string storename; //가맹점명
-
+    public string rawDate;      // 원본 문자열 (디버그용)
+    public DateTime date;       // 파싱된 날짜
+    public string time;         // 결제시간
+    public string classification;  // 매출구분
+    public int expendituredetails; // 지출내역(금액)
+    public string storename;       // 가맹점명
 }
 
 public class CSVReader : MonoBehaviour
@@ -29,7 +31,7 @@ public class CSVReader : MonoBehaviour
 
     [Header("구글 시트 csv 다운로드 주소")]
     // 구글 시트 csv 다운로드 주소
-    private string serverURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPj6bS8R3JHyH2lg8rSOQloMgVDnYX14E5RxHOa6dlPH7k_ceSIdct4IOMIC50mgUk06MlVNpLwFd7/pub?gid=0&single=true&output=csv";
+    private string serverURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPj6bS8R3JHyH2lg8rSOQloMgVDnYX14E5RxHOa6dlPH7k_ceSIdct4IOMIC50mgUk06MlVNpLwFd7/pub?output=csv";
 
     // 저장될 파일 이름
     private string fileName = "ExpenditureData.csv";
@@ -46,6 +48,8 @@ public class CSVReader : MonoBehaviour
     {
         LoadDate();
     }
+
+
 
     #region - 데이터 로드 메서드
     public void LoadDate()
@@ -114,80 +118,106 @@ public class CSVReader : MonoBehaviour
     #region - csv파일 리스트로 변환(파싱작업) 메서드
     void ParseCSV(string csvData)
     {
-        expenditure.Clear(); // 리스트 초기화
+        expenditure.Clear();
 
-        StringReader reader = new StringReader(csvData);
-
-        string header = reader.ReadLine();
-
-        //Peek() = 다음에 읽은 데이터가 있는지 확인만 하고, 커서(위치)는 움직이지 않는 함수
-        while (reader.Peek() != -1)
+        if (csvData.StartsWith("\uFEFF"))
         {
-            string line = reader.ReadLine();
-            if (string.IsNullOrEmpty(line)) continue;
-
-            string[] rows = line.Split(',');
-            //,기준으로 문자열 자르기
-
-            if (rows.Length < 5) continue;
-            //데이터 칸 수가 맞는지 확인하기 -> 최소 5개여야함
-
-            Expenditure data = new Expenditure();
-
-            data.date = rows[0]; //A열 결제일자 표시
-            data.time = rows[1]; //B열 결제시간 표시
-            data.classification = rows[2];//C열  매출구분 표시
-
-
-            if (int.TryParse(rows[3], out int cost))
-            {
-                data.expendituredetails = cost;  //E열 , 지출내역은 int으로 TryParse를 사용하여 변환
-            }
-            else
-            {
-                data.expendituredetails = 0; // 반환하지 못할 경우, 내역을 0원으로 넘기기
-            }
-
-            data.storename = rows[4]; //E열 가맹점 표시
-
-            expenditure.Add(data);
+            csvData = csvData.Substring(1);
         }
 
-        reader.Close();
-        Debug.Log("지출내역 업로드");
-        Debug.Log($"{expenditure.Count}개 업로드");
-    }
+        // 공백으로 붙어있는 데이터를 날짜 패턴으로 분리
+        csvData = System.Text.RegularExpressions.Regex.Replace(
+            csvData,
+            @"(\s+)(20\d{2}\.\d{1,2}\.\d{1,2})",
+            "\n$2"
+        );
 
+        using (StringReader reader = new StringReader(csvData))
+        {
+            string header = reader.ReadLine();
+
+            while (reader.Peek() != -1)
+            {
+                string line = reader.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                string[] cols = line.Split(new[] { ',' }, 5);
+
+                if (cols.Length < 5)
+                    continue;
+
+                string dateStr = cols[0].Trim();
+                string timeStr = cols[1].Trim();
+                string classStr = cols[2].Trim();
+                string moneyStr = cols[3].Trim();
+                string storeStr = cols[4].Trim();
+
+                // 날짜 파싱 (여러 형식 지원)
+                if (!DateTime.TryParseExact(dateStr,
+                    new[] { "yyyy.MM.dd", "yyyy.M.d", "yyyy.MM.d", "yyyy.M.dd" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out DateTime parsedDate))
+                {
+                    continue;
+                }
+
+                moneyStr = moneyStr.Replace(",", "").Replace("원", "").Trim();
+                if (!int.TryParse(moneyStr, out int amount))
+                    continue;
+
+                expenditure.Add(new Expenditure
+                {
+                    rawDate = dateStr,
+                    date = parsedDate,
+                    time = timeStr,
+                    classification = classStr,
+                    expendituredetails = amount,
+                    storename = storeStr
+                });
+            }
+        }
+
+        Debug.Log($"[ParseCSV] 총 {expenditure.Count}건 완료");
+    }
     #endregion
 
 
     #region - 총 출금/입금 내역 계산
     public int DailyTotalAmount(DateTime targetDate)
     {
-        //지출내역의 리스트가 비어있으면 0원 리턴
+        Debug.Log($"=== DailyTotalAmount 시작 ===");
+        Debug.Log($"조회 날짜: {targetDate:yyyy-MM-dd}");
+        Debug.Log($"전체 데이터 건수: {expenditure?.Count ?? 0}");
+
         if (expenditure == null || expenditure.Count == 0)
         {
-            Debug.Log("리스트에 데이터 없음");
-                return 0;
+            Debug.LogError("expenditure 리스트가 비어있음!");
+            return 0;
         }
 
-
-        //해당 날짜와 일치하는 항목만 골라서 금액 합산
-        // Where -> 데이터리스트에서 내가 원하는 조건에 맞는 것만 걸러내는 필터역할
-        //item => {...} : 리스트에 있는 데이터 하나를 가져와서 중괄호 안의 내용을 실행해라
-        //반복문을 쓰지 않아도 알아서 리스트를 끝까지 반복
-
-        int totalSum = expenditure.Where(item =>
+        // 전체 데이터 중 처음 5개 출력
+        Debug.Log("--- 전체 데이터 샘플 ---");
+        foreach (var e in expenditure.Take(5))
         {
-            if (DateTime.TryParse(item.date, out DateTime itemDate))
-            {
-                return itemDate.Year == targetDate.Year &&  //년도가 동일한지
-                itemDate.Month == targetDate.Month && //월이 동일한지
-                itemDate.Day == targetDate.Day; //일이 동일한지 확인
-            }
-            return false; // 날짜 형식이 이상하면 제외시키기  
-        })
-          .Sum(item => item.expendituredetails);  //지출내역끼리만 다 더함
+            Debug.Log($"  {e.date:yyyy-MM-dd} | {e.expendituredetails}원");
+        }
+
+        DateTime day = targetDate.Date;
+        var list = expenditure.Where(e => e.date.Date == day).ToList();
+
+        Debug.Log($"매칭된 건수: {list.Count}");
+
+        foreach (var e in list)
+        {
+            Debug.Log($"  [매칭] {e.date:yyyy-MM-dd} {e.time} | {e.expendituredetails}원 | {e.storename}");
+        }
+
+        int totalSum = list.Sum(e => e.expendituredetails);
+        Debug.Log($"합계: {totalSum}원");
+
         return totalSum;
     }
 
