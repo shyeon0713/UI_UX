@@ -222,5 +222,29 @@ public class CSVReader : MonoBehaviour
     }
 
     #endregion
+
+    #region - 월별 총 지출 계산
+    public int MonthlyTotalAmount(int year, int month)
+    {
+        if(expenditure == null || expenditure.Count == 0)
+        {
+            Debug.LogError("expenditure 리스트가 비어있음!");
+            return 0;
+
+        }
+
+        var monthlyList = expenditure
+        .Where(e => e.date.Year == year && e.date.Month == month)
+        .ToList();
+
+        int totalSum = monthlyList.Sum(e => e.expendituredetails);
+
+        Debug.Log($"{year}년 {month}월 총 지출: {totalSum}원 ({monthlyList.Count}건)");
+
+        return totalSum;
+    }
+
+    #endregion
+
 }
 

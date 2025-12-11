@@ -1,9 +1,10 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using System;  //DateTime 사용
+﻿using System;  //DateTime 사용
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 
 
@@ -15,8 +16,8 @@ public class CalenderUI : MonoBehaviour
 
     [Header("UI reference")]
     public TMP_Text monthText;
-    public TMP_Text Daytext;
     public TMP_Text yearText;
+    public TMP_Text monthlyTotalText;  // 월 총 지출 표시
 
     [Header("SelectMonth/Year")]
     public Button premonth;
@@ -59,15 +60,34 @@ public class CalenderUI : MonoBehaviour
 
     }
 
+    #region - CSV 데이터 로드
     #endregion
     private void Start()
     {
         currentDate = DateTime.Now; //DateTime 활용
-        GenerateCalender(currentDate);
 
         premonth.onClick.AddListener(PreMonth); //이전 달 버튼 리스너 추가
         nextmonth.onClick.AddListener(NextMonth); // 다음 달 버튼 리스너 추가
+
+        StartCoroutine(WaitForDataAndGenerate());
     }
+
+    private IEnumerator WaitForDataAndGenerate()
+    {
+        // CSVReader 인스턴스와 데이터 로드 대기
+        while (CSVReader.Instance == null ||
+               CSVReader.Instance.expenditure == null ||
+               CSVReader.Instance.expenditure.Count == 0)
+        {
+            yield return null;
+        }
+
+        Debug.Log("데이터 로드 완료, 캘린더 생성 시작");
+        GenerateCalender(currentDate);
+    }
+
+    #endregion
+
 
     #region - 버튼 리스너 (Month)
     public void NextMonth()  //��ư�̶� ����
@@ -89,14 +109,19 @@ public class CalenderUI : MonoBehaviour
     void GenerateCalender(DateTime date)
     {
         monthText.text = $"{date.Month + "월"}";  // 월 표시
+       // yearText.text = date.Year.ToString(); //년 표시 -> 수정
         // 추후에 문자형식으로 변경
+
+       int monthlyTotal = CSVReader.Instance.MonthlyTotalAmount(date.Year, date.Month);
+        // 월 총 지출 계산 및 표시
+        monthlyTotalText.text = $" -{monthlyTotal:N0}원";
+
 
         DateTime firstday = new DateTime(date.Year, date.Month, 1);  //���۳�¥
         int startday = (int)firstday.DayOfWeek;
         int dayInMonth = DateTime.DaysInMonth(date.Year, date.Month);
 
-        foreach (var btn in pool)  // 1. ��ü ��Ȱ��ȭ
-
+        foreach (var btn in pool)  //��ü ��Ȱ��ȭ
             btn.gameObject.SetActive(false);  // Destroy ->  SetActive활용
 
         int index = 0; //poolindex �ʱ�ȭ
@@ -104,11 +129,21 @@ public class CalenderUI : MonoBehaviour
 
         for (int i = 0; i < startday; i++)   // 빈칸처리
         {
-            pool[index].gameObject.SetActive(true);
-            pool[index].GetComponentInChildren<TMP_Text>().text = "";
+            var btn = pool[index];
+            btn.gameObject.SetActive(true);
+
+            CalenderDayCell cell = btn.GetComponent<CalenderDayCell>();
+            if (cell != null)
+            {
+                cell.Setup(0, 0, false);  // 날짜 0, 금액 0, 버튼 비활성화
+            }
+            Image btnImage = btn.GetComponent<Image>();
+            if (btnImage != null)
+            {
+                btnImage.color = new Color(0, 0, 0, 0); //  비활성화 대신 버튼 이미지 투명화
+            }
+
             index++;
-
-
         }
 
         // 날짜 배치 + 지출내역 배치 
