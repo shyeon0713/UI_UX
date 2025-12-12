@@ -19,17 +19,20 @@ public class CategoryRuleEditor : Editor
 
         EditorGUILayout.PropertyField(categoryType);
 
-        EditorGUILayout.Space(5);
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("Keywords", EditorStyles.boldLabel);
 
         for (int i = 0; i < keywords.arraySize; i++)
         {
+            SerializedProperty element = keywords.GetArrayElementAtIndex(i);
+
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PropertyField(keywords.GetArrayElementAtIndex(i), GUIContent.none);
+            element.stringValue = EditorGUILayout.TextField(element.stringValue);
 
             if (GUILayout.Button("X", GUILayout.Width(25)))
             {
                 keywords.DeleteArrayElementAtIndex(i);
+                break;
             }
 
             EditorGUILayout.EndHorizontal();

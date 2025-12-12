@@ -2,68 +2,104 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-public class SlideManager : MonoBehaviour, IDragHandler, IEndDragHandler
+public class SlideManager : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    public RectTransform calendarP;
-    public RectTransform diagramP;
+    [Header("Refs")]
+    public ScrollRect scrollRect;          
+    public RectTransform content;
 
-    public ScrollRect scrollRect;
+    [Header("Tuning")]
+    public float snapDuration = 0.25f;
+   [Range(0.1f, 0.9f)] public float snapThreshold = 0.5f;
 
-    private float screenWidth;
+    private float pageWidth;
+    private int pageIndex = 0;
 
-    private Vector2 calendarStartPos;
-    private Vector2 diagramStartPos;
+    private Vector2 dragStartContentPos;
+    private bool isSnapping;
 
     void Start()
     {
-        screenWidth = Screen.width;
+        scrollRect.enabled = false;  // ScrollRect 비활성화
+        pageWidth = scrollRect.viewport.rect.width;
 
-        //초기위치 설정
-        calendarP.anchoredPosition = Vector2.zero;
-        diagramP.anchoredPosition = new Vector2(screenWidth, 0);
+        SetPageImmediate(0);
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (isSnapping) return;
+        dragStartContentPos = content.anchoredPosition;
     }
 
     public void OnDrag(PointerEventData e)
     {
-        float deltaX = e.delta.x;
+        if (isSnapping) return;
 
-        // 슬라이드 거리만큼 두 패널 이동
-        calendarP.anchoredPosition += new Vector2(deltaX, 0);
-        diagramP.anchoredPosition += new Vector2(deltaX, 0);
+        // ScrollRect가 자체적으로 content를 움직이므로, 여기서는 ScrollRect를 쓰지 않고 직접 움직일 거면
+        // scrollRect.enabled = false 방식도 가능하지만, 충돌을 피하려면 보통 OnDrag에서 content를 직접 제어합니다.
+        Vector2 pos = content.anchoredPosition;
+        pos.x += e.delta.x; // 드래그 방향 그대로
+
+        // 2페이지 기준 클램프: [ -pageWidth , 0 ]
+        pos.x = Mathf.Clamp(pos.x, -pageWidth, 0f);
+        content.anchoredPosition = pos;
     }
 
     public void OnEndDrag(PointerEventData e)
     {
-        // 50% 이상 넘기면 화면 전환
-        if (calendarP.anchoredPosition.x < -screenWidth / 2)
+        if (isSnapping) return;
+
+        float deltaX = content.anchoredPosition.x - dragStartContentPos.x;
+        float absDelta = Mathf.Abs(deltaX);
+
+        // 이동 비율 (0~1)
+        float progress = absDelta / pageWidth;
+
+        int targetPage = pageIndex; // 기본-> 현재 페이지 유지
+
+        if (progress >= snapThreshold)
         {
-            // 다이어그램 화면으로 전환
-            StartCoroutine(SlideTo(diagram: true));
+            // 왼쪽으로 드래그 → 다음 페이지
+            if (deltaX < 0 && pageIndex < 1)
+                targetPage = pageIndex + 1;
+
+            // 오른쪽으로 드래그 → 이전 페이지
+            else if (deltaX > 0 && pageIndex > 0)
+                targetPage = pageIndex - 1;
         }
-        else
-        {
-            // 달력 화면으로 전환
-            StartCoroutine(SlideTo(diagram: false));
-        }
+
+        StartCoroutine(SlideTo(targetPage));
     }
 
-    private IEnumerator SlideTo(bool diagram)
+    private IEnumerator SlideTo(int targetPage)
     {
-        float t = 0;
-        float duration = 0.25f;
+        isSnapping = true;
 
-        Vector2 calendarTarget = diagram ? new Vector2(-screenWidth, 0) : Vector2.zero;
-        Vector2 diagramTarget = diagram ? Vector2.zero : new Vector2(screenWidth, 0);
+        float targetX = (targetPage == 0) ? 0f : -pageWidth;
+        Vector2 start = content.anchoredPosition;
+        Vector2 end = new Vector2(targetX, start.y);
 
+        float t = 0f;
         while (t < 1f)
         {
-            t += Time.deltaTime / duration;
-
-            calendarP.anchoredPosition = Vector2.Lerp(calendarP.anchoredPosition, calendarTarget, t);
-            diagramP.anchoredPosition = Vector2.Lerp(diagramP.anchoredPosition, diagramTarget, t);
-
+            t += Time.unscaledDeltaTime / snapDuration;
+            content.anchoredPosition = Vector2.Lerp(start, end, t);
             yield return null;
         }
+
+        content.anchoredPosition = end;
+        pageIndex = targetPage; // 현재 화면 고정
+        isSnapping = false;
+    }
+
+    private void SetPageImmediate(int targetPage)
+    {
+        float targetX = (targetPage == 0) ? 0f : -pageWidth;
+        Vector2 pos = content.anchoredPosition;
+        pos.x = targetX;
+        content.anchoredPosition = pos;
+        pageIndex = targetPage;
     }
 }
 

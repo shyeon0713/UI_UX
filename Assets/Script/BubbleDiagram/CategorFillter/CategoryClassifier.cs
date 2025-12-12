@@ -17,7 +17,7 @@ public class CategoryClassifier : MonoBehaviour
             }
         }
 
-        return CategoryType.Unknown;
+        return CategoryType.Other;
     }
 }
 

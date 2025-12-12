@@ -5,5 +5,5 @@ public enum CategoryType
     Transport,  // 교통비
     Shopping,   // 쇼핑
     Saving,     // 저축
-    Unknown
+    Other // 기타항목
 }

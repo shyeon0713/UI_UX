@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 611a7993e59c4a14bad9ff5e6d6a6f14, type: 3}
+  m_Name: Rule_Culture
+  m_EditorClassIdentifier: 
+  categoryType: 1
+  keywords:
+  - PC
+  - "\uAD6C\uAE00"
+  - "\uCE74\uCE74\uC624"
+  - "\uB124\uC774\uBC84"
+  - "\uBA54\uAC00\uBC15\uC2A4"
+  - CGV
+  - "\uB86F\uB370\uC2DC\uB124\uB9C8"
+  - "\uBBF8\uC2A4\uD130\uBE14\uB8E8"

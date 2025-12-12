@@ -7,25 +7,29 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-
 public class CalenderUI : MonoBehaviour
 {
     [Header("Prefab")]
     public GameObject daybuttonPrefab;
     public Transform datesGrid;
 
-    [Header("UI reference")]
+    [Header("Text UI")]
     public TMP_Text monthText;
     public TMP_Text yearText;
     public TMP_Text monthlyTotalText;  // 월 총 지출 표시
 
-    [Header("SelectMonth/Year")]
+    [Header("년/월 선택 UI")]
     public Button premonth;
     public Button nextmonth;
     //추후에 팝업형식의 달력을 띄워 원하는 날짜를 직접 선택할 수 있도록 수정
 
     // public Button nextyear;  년을 변경하는 버튼 -> 팝업으로 수정? 아님 버튼으로 수정?
     // public Button preyear;
+
+
+    [Header("버블다이어그램")]
+    public BubbleDiagramController bubbleDiagram;
+    public CategoryClassifier categoryClassifier;
 
     public CSVReader csvreader;  //지출내역 가져오기
 
@@ -40,7 +44,6 @@ public class CalenderUI : MonoBehaviour
     #region - 풀링 
     void InitializePool()
     {
-
 
         for (int i = 0; i < maxSlots; i++)
         {
@@ -71,6 +74,7 @@ public class CalenderUI : MonoBehaviour
 
         StartCoroutine(WaitForDataAndGenerate());
     }
+
 
     private IEnumerator WaitForDataAndGenerate()
     {
@@ -112,7 +116,7 @@ public class CalenderUI : MonoBehaviour
        // yearText.text = date.Year.ToString(); //년 표시 -> 수정
         // 추후에 문자형식으로 변경
 
-       int monthlyTotal = CSVReader.Instance.MonthlyTotalAmount(date.Year, date.Month);
+        int monthlyTotal = CSVReader.Instance.MonthlyTotalAmount(date.Year, date.Month);
         // 월 총 지출 계산 및 표시
         monthlyTotalText.text = $" -{monthlyTotal:N0}원";
 
@@ -177,6 +181,29 @@ public class CalenderUI : MonoBehaviour
            
     }
     #endregion
+
+
+    private Dictionary<CategoryType, int> GetMonthlyCategoryTotals(int year, int month)
+    {
+        Dictionary<CategoryType, int> result = new();
+
+        foreach (var item in CSVReader.Instance.expenditure)
+        {
+            // 문자열 파싱 전부 제거
+            if (item.date.Year != year || item.date.Month != month)
+                continue;
+
+            CategoryType category =
+                categoryClassifier.Classify(item.storename);
+
+            if (!result.ContainsKey(category))
+                result[category] = 0;
+
+            result[category] += item.expendituredetails;
+        }
+
+        return result;
+    }
 
 
 }
