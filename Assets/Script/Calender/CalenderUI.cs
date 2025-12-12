@@ -117,8 +117,20 @@ public class CalenderUI : MonoBehaviour
         // 추후에 문자형식으로 변경
 
         int monthlyTotal = CSVReader.Instance.MonthlyTotalAmount(date.Year, date.Month);
+       
         // 월 총 지출 계산 및 표시
         monthlyTotalText.text = $" -{monthlyTotal:N0}원";
+
+        // 버블 다이어그램 상단 정보 갱신
+        bubbleDiagram.UpdateHeader(
+            date.Year,
+            date.Month,
+            monthlyTotal
+        );
+
+        var monthlyCategoryTotals = GetMonthlyCategoryTotals(date.Year, date.Month);
+        bubbleDiagram.UpdateDiagram(monthlyCategoryTotals);
+        
 
 
         DateTime firstday = new DateTime(date.Year, date.Month, 1);  //���۳�¥

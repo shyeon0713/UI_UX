@@ -12,6 +12,11 @@ public class BubbleDiagramController : MonoBehaviour
     public float maxRadius = 140f;   // 가장 큰 원 반지름
     public float minRadius = 40f;    // 최소 원 크기
 
+    [Header("Text UI")]
+    public TMP_Text monthlyTotalText;  // 월 총 지출 표시
+    public TMP_Text yearText;  // 년 표시
+    public TMP_Text monthText;  // 월 표시
+
     [Header("범위")]
     public float selectedScale = 1.1f;
 
@@ -23,6 +28,7 @@ public class BubbleDiagramController : MonoBehaviour
             return;
 
         float total = monthlyTotals.Values.Sum();
+
         if (total <= 0f) return;
 
         foreach (var bubble in bubbles)
@@ -52,6 +58,21 @@ public class BubbleDiagramController : MonoBehaviour
         }
     }
 
+    public void UpdateHeader(int year, int month, int monthlyTotal)
+    {
+        if (monthText != null)
+        {
+            monthText.text = $"{month}월";
+        }
+        if(yearText != null)
+        {
+            yearText.text = $"{year}";
+        }
+
+        if (monthlyTotalText != null)
+            monthlyTotalText.text = $"-{monthlyTotal:N0}원";
+    }
+
     // 카테고리 라벨링
     private string GetCategoryName(CategoryType type)
     {
@@ -62,6 +83,7 @@ public class BubbleDiagramController : MonoBehaviour
             case CategoryType.Transport: return "교통";
             case CategoryType.Shopping: return "쇼핑";
             case CategoryType.Saving: return "저축";
+            case CategoryType.Other: return "그 외";
             default: return "";
         }
     }
