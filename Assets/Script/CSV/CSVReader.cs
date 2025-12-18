@@ -1,42 +1,45 @@
-using System;  //DateTime »ç¿ë
+ï»¿using System;  //DateTime ì‚¬ìš©
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;  // ÆÄÀÏ ÀúÀå /ÀĞ±â¿ë
+using System.IO;  // íŒŒì¼ ì €ì¥ /ì½ê¸°ìš©
 using UnityEngine;
-using UnityEngine.Networking;  //  csvÆÄÀÏ ´Ù¿î·Îµå
+using UnityEngine.Networking;  //  csvíŒŒì¼ ë‹¤ìš´ë¡œë“œ
 using System.Globalization;
-using System.Linq; // Sum °è»êÀ» À§ÇØ »ç¿ë
-using System.Text.RegularExpressions;
+using System.Linq; // Sum ê³„ì‚°ì„ ìœ„í•´ ì‚¬ìš©
 
 
-// ¸ğ¹ÙÀÏ È¯°æ¿¡¼­ ÃßÈÄ¿¡ csvÆÄÀÏÀ» Àü´Ş¹ŞÀ» ¼ö ÀÖ´Â ¹æ½ÄÀ¸·Î º¯°æ
-// ±¸±Û ½ºÇÁ·¹µå½ÃÆ®ÀÇ µ¥ÀÌÅÍ °ªÀ» À¥¿¡ °Ô½Ã·Î ¾ò¾î
-//ÇØ´ç µ¥ÀÌÅÍ°ªÀ» ¹Ş¾Æ¿À±â -> ±¸±Û ½ºÇÁ·¹µå½ÃÆ®°¡ ÀÏÁ¾ÀÇ ¼­¹ö¿ªÇÒ
+
+// ëª¨ë°”ì¼ í™˜ê²½ì—ì„œ ì¶”í›„ì— csvíŒŒì¼ì„ ì „ë‹¬ë°›ì„ ìˆ˜ ìˆëŠ” ë°©ì‹ìœ¼ë¡œ ë³€ê²½
+// êµ¬ê¸€ ìŠ¤í”„ë ˆë“œì‹œíŠ¸ì˜ ë°ì´í„° ê°’ì„ ì›¹ì— ê²Œì‹œë¡œ ì–»ì–´
+//í•´ë‹¹ ë°ì´í„°ê°’ì„ ë°›ì•„ì˜¤ê¸° -> êµ¬ê¸€ ìŠ¤í”„ë ˆë“œì‹œíŠ¸ê°€ ì¼ì¢…ì˜ ì„œë²„ì—­í• 
 
 
 [System.Serializable]
 public class Expenditure   
 {
-    public string rawDate;      // ¿øº» ¹®ÀÚ¿­ (µğ¹ö±×¿ë)
-    public DateTime date;       // ÆÄ½ÌµÈ ³¯Â¥
-    public string time;         // °áÁ¦½Ã°£
-    public string classification;  // ¸ÅÃâ±¸ºĞ
-    public int expendituredetails; // ÁöÃâ³»¿ª(±İ¾×)
-    public string storename;       // °¡¸ÍÁ¡¸í
+    public string rawDate;      // ì›ë³¸ ë¬¸ìì—´ (ë””ë²„ê·¸ìš©)
+    public DateTime date;       // íŒŒì‹±ëœ ë‚ ì§œ
+    public string time;         // ê²°ì œì‹œê°„
+    public string classification;  // ë§¤ì¶œêµ¬ë¶„
+    public int expendituredetails; // ì§€ì¶œë‚´ì—­(ê¸ˆì•¡)
+    public string storename;       // ê°€ë§¹ì ëª…
+
+    public ConsumeEmotion emotion; // ì†Œë¹„ê°ì •
 }
+
+
 
 public class CSVReader : MonoBehaviour
 {
-    public static CSVReader Instance;  // ½Ì±ÛÅæ
+    public static CSVReader Instance;  // ì‹±ê¸€í†¤
 
-    [Header("±¸±Û ½ÃÆ® csv ´Ù¿î·Îµå ÁÖ¼Ò")]
-    // ±¸±Û ½ÃÆ® csv ´Ù¿î·Îµå ÁÖ¼Ò
+    [Header("êµ¬ê¸€ ì‹œíŠ¸ csv ë‹¤ìš´ë¡œë“œ ì£¼ì†Œ")]
     private string serverURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPj6bS8R3JHyH2lg8rSOQloMgVDnYX14E5RxHOa6dlPH7k_ceSIdct4IOMIC50mgUk06MlVNpLwFd7/pub?output=csv";
 
-    // ÀúÀåµÉ ÆÄÀÏ ÀÌ¸§
+    // ì €ì¥ë  íŒŒì¼ ì´ë¦„
     private string fileName = "ExpenditureData.csv";
 
-    //ÆÄ½ÌµÈ µ¥ÀÌÅÍ¸¦ ´ãÀ» ¸®½ºÆ®
+    //íŒŒì‹±ëœ ë°ì´í„°ë¥¼ ë‹´ì„ ë¦¬ìŠ¤íŠ¸
     public List<Expenditure> expenditure = new List<Expenditure>();
 
     private void Awake()
@@ -49,40 +52,68 @@ public class CSVReader : MonoBehaviour
         LoadDate();
     }
 
-
-
-    #region - µ¥ÀÌÅÍ ·Îµå ¸Ş¼­µå
-    public void LoadDate()
+    [ContextMenu("ì €ì¥ íŒŒì¼ ì‚­ì œ í›„ ì„œë²„ì—ì„œ ë‹¤ìš´ë¡œë“œ")]
+    public void ForceRedownload()
     {
-        // ÁÖ¼Ò »ı¼º
         string savePath = Path.Combine(Application.persistentDataPath, fileName);
 
         if (File.Exists(savePath))
         {
-            Debug.Log("ÀúÀåµÈ ÃÖ½Å µ¥ÀÌÅÍ");
+            File.Delete(savePath);
+            Debug.Log($"[CSVReader] ê¸°ì¡´ íŒŒì¼ ì‚­ì œ: {savePath}");
+        }
+
+        Debug.Log("[CSVReader] ì„œë²„ì—ì„œ ìƒˆë¡œ ë‹¤ìš´ë¡œë“œ ì‹œì‘");
+        UpdateFromServer();
+    }
+
+    // CSVReader.csì— public í•¨ìˆ˜ ì¶”ê°€
+    [ContextMenu("CSV ì¬íŒŒì‹±")]
+    public void ReloadAndParseCSV()
+    {
+        Debug.Log("[CSVReader] ìˆ˜ë™ ì¬íŒŒì‹± ì‹œì‘");
+        LoadDate();
+    }
+
+    #region - ë°ì´í„° ë¡œë“œ ë©”ì„œë“œ
+    public void LoadDate()
+    {
+        // ì£¼ì†Œ ìƒì„±
+        string savePath = Path.Combine(Application.persistentDataPath, fileName);
+
+        // ì—ë””í„°ì—ì„œëŠ” í•­ìƒ ì„œë²„ì—ì„œ ìµœì‹  ë°ì´í„° ë‹¤ìš´ë¡œë“œ
+#if UNITY_EDITOR
+        Debug.Log("[CSVReader] ì—ë””í„° ëª¨ë“œ: ì„œë²„ì—ì„œ ìµœì‹  CSV ë‹¤ìš´ë¡œë“œ");
+        UpdateFromServer();
+        return;
+#endif
+
+        if (File.Exists(savePath))
+        {
+            Debug.Log("ì €ì¥ëœ ìµœì‹  ë°ì´í„°");
             string csvData = File.ReadAllText(savePath);
-            ParseCSV(csvData); //ÆÄ½Ì ½ÇÇà
+            ParseCSV(csvData); //íŒŒì‹± ì‹¤í–‰
             
         }
-        else  //ÀúÀåµÈ ÆÄÀÏÀÌ ¾øÀ» °æ¿ì
+        else  //ì €ì¥ëœ íŒŒì¼ì´ ì—†ì„ ê²½ìš°
         {
-            Debug.Log("ÀúÀåµÈ ÆÄÀÏÀÌ ¾øÀ½, ±âº» ÆÄÀÏ Àû¿ë");
+            Debug.Log("ì €ì¥ëœ íŒŒì¼ì´ ì—†ìŒ, ê¸°ë³¸ íŒŒì¼ ì ìš©");
             TextAsset defaultData = Resources.Load<TextAsset>("DefaultData");
 
-            if(defaultData != null) //±âº» ÆÄÀÏÀÌ ÀÖÀ» °æ¿ì, À¯´ÏÆ¼³»¿¡ ±âº»ÆÄÀÏÀ» ³Ö¾îµÒ
+            if(defaultData != null) //ê¸°ë³¸ íŒŒì¼ì´ ìˆì„ ê²½ìš°, ìœ ë‹ˆí‹°ë‚´ì— ê¸°ë³¸íŒŒì¼ì„ ë„£ì–´ë‘ 
             {
                 ParseCSV(defaultData.text);
             }
             else
             {
-                //È¤½Ã ±âº»ÆÄÀÏÀÌ ¾øÀ» °æ¿ì. ¼­¹ö¿¡¼­ °¡Á®¿À±â
+                //í˜¹ì‹œ ê¸°ë³¸íŒŒì¼ì´ ì—†ì„ ê²½ìš°. ì„œë²„ì—ì„œ ê°€ì ¸ì˜¤ê¸°
                 UpdateFromServer();
             }
         }
     }
     #endregion
 
-    #region - ¼­¹ö¿¡¼­ °¡Á®¿À´Â ¸Ş¼­µå
+    #region - ì„œë²„ì—ì„œ ê°€ì ¸ì˜¤ëŠ” ë©”ì„œë“œ
     public void UpdateFromServer()
     {
         StartCoroutine(DownloadCoroutine());
@@ -96,17 +127,17 @@ public class CSVReader : MonoBehaviour
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                //´Ù¿î·Îµå ½ÇÆĞ
+                //ë‹¤ìš´ë¡œë“œ ì‹¤íŒ¨
             }
             else
             {
                 string csvData = www.downloadHandler.text;
 
-                //ÃßÈÄ ÀÎÅÍ³İ ¾øÀÌ »ç¿ëÇÏ±â À§ÇØ ´Ù¿î¹Ş¾Æ¼­ ¸®½ºÆ®·Î °»½Å
+                //ì¶”í›„ ì¸í„°ë„· ì—†ì´ ì‚¬ìš©í•˜ê¸° ìœ„í•´ ë‹¤ìš´ë°›ì•„ì„œ ë¦¬ìŠ¤íŠ¸ë¡œ ê°±ì‹ 
                 string savePath = Path.Combine(Application.persistentDataPath, fileName);
                 File.WriteAllText(savePath, csvData);
 
-                //´Ù¿î¹ŞÀº µÚ ¸®½ºÆ® °»½Å
+                //ë‹¤ìš´ë°›ì€ ë’¤ ë¦¬ìŠ¤íŠ¸ ê°±ì‹ 
                 ParseCSV(csvData);
             }
 
@@ -115,7 +146,7 @@ public class CSVReader : MonoBehaviour
 
     #endregion
 
-    #region - csvÆÄÀÏ ¸®½ºÆ®·Î º¯È¯(ÆÄ½ÌÀÛ¾÷) ¸Ş¼­µå
+    #region - csvíŒŒì¼ ë¦¬ìŠ¤íŠ¸ë¡œ ë³€í™˜(íŒŒì‹±ì‘ì—…) ë©”ì„œë“œ
     void ParseCSV(string csvData)
     {
         expenditure.Clear();
@@ -125,7 +156,6 @@ public class CSVReader : MonoBehaviour
             csvData = csvData.Substring(1);
         }
 
-        // °ø¹éÀ¸·Î ºÙ¾îÀÖ´Â µ¥ÀÌÅÍ¸¦ ³¯Â¥ ÆĞÅÏÀ¸·Î ºĞ¸®
         csvData = System.Text.RegularExpressions.Regex.Replace(
             csvData,
             @"(\s+)(20\d{2}\.\d{1,2}\.\d{1,2})",
@@ -135,16 +165,19 @@ public class CSVReader : MonoBehaviour
         using (StringReader reader = new StringReader(csvData))
         {
             string header = reader.ReadLine();
+            int lineNumber = 0;
 
             while (reader.Peek() != -1)
             {
                 string line = reader.ReadLine();
+                lineNumber++;
 
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
-                string[] cols = line.Split(new[] { ',' }, 5);
+                string[] cols = line.Split(',');
 
+                // ë‚ ì§œ,ì‹œê°„,êµ¬ë¶„,ê¸ˆì•¡,ê°€ë§¹ì ëª… ìµœì†Œ í•„ìš”
                 if (cols.Length < 5)
                     continue;
 
@@ -154,8 +187,8 @@ public class CSVReader : MonoBehaviour
                 string moneyStr = cols[3].Trim();
                 string storeStr = cols[4].Trim();
 
-                // ³¯Â¥ ÆÄ½Ì (¿©·¯ Çü½Ä Áö¿ø)
-                if (!DateTime.TryParseExact(dateStr,
+                if (!DateTime.TryParseExact(
+                    dateStr,
                     new[] { "yyyy.MM.dd", "yyyy.M.d", "yyyy.MM.d", "yyyy.M.dd" },
                     CultureInfo.InvariantCulture,
                     DateTimeStyles.None,
@@ -164,9 +197,26 @@ public class CSVReader : MonoBehaviour
                     continue;
                 }
 
-                moneyStr = moneyStr.Replace(",", "").Replace("¿ø", "").Trim();
+                moneyStr = moneyStr.Replace(",", "").Replace("ì›", "").Trim();
                 if (!int.TryParse(moneyStr, out int amount))
                     continue;
+
+                ConsumeEmotion emotion = ConsumeEmotion.Normal;
+
+                // ê°ì • ì»¬ëŸ¼ì´ ìˆëŠ” ê²½ìš°ë§Œ ì²˜ë¦¬
+                if (cols.Length >= 6)
+                {
+                    string emotionStr = cols[5].Trim();
+
+                    if (!string.IsNullOrEmpty(emotionStr))
+                    {
+                        if (!Enum.TryParse(emotionStr, true, out emotion))
+                        {
+                            Debug.LogWarning($"[ParseCSV] ê°ì • íŒŒì‹± ì‹¤íŒ¨: {emotionStr} (line {lineNumber})");
+                            emotion = ConsumeEmotion.Normal;
+                        }
+                    }
+                }
 
                 expenditure.Add(new Expenditure
                 {
@@ -175,60 +225,141 @@ public class CSVReader : MonoBehaviour
                     time = timeStr,
                     classification = classStr,
                     expendituredetails = amount,
-                    storename = storeStr
+                    storename = storeStr,
+                    emotion = emotion
                 });
+
+                Debug.Log($"[CSV] {parsedDate:yyyy-MM-dd} | {storeStr} | {emotion}");
+            }
+
+            var emotionGroups = expenditure.GroupBy(e => e.emotion);
+            foreach (var group in emotionGroups)
+            {
+                Debug.Log($"[ParseCSV] ê°ì • í†µê³„ - {group.Key}: {group.Count()}ê±´");
+
+                if (group.Key != ConsumeEmotion.Normal)
+                {
+                    foreach (var item in group)
+                    {
+                        Debug.Log($"  â–¶ {item.date:yyyy-MM-dd} | {item.storename} | {item.emotion}");
+                    }
+                }
             }
         }
-
-        Debug.Log($"[ParseCSV] ÃÑ {expenditure.Count}°Ç ¿Ï·á");
     }
     #endregion
 
+    #region - ì†Œë¹„ê°ì • ê´€ë¦¬
+    public ConsumeEmotion GetDailyEmotion(DateTime date)
+    {
+        DateTime targetDate = date.Date;
 
-    #region - ÃÑ Ãâ±İ/ÀÔ±İ ³»¿ª °è»ê
+        // í•´ë‹¹ ë‚ ì§œì˜ ëª¨ë“  í•­ëª© ì¡°íšŒ
+        var dayItems = expenditure.Where(e => e.date.Date == targetDate).ToList();
+
+        if (dayItems.Count == 0)
+        {
+            return ConsumeEmotion.Normal;
+        }
+
+        // ê°ì •ë³„ ê°œìˆ˜ ì§‘ê³„
+        Dictionary<ConsumeEmotion, int> emotionCount = new Dictionary<ConsumeEmotion, int>();
+
+        foreach (var item in dayItems)
+        {
+            if (!emotionCount.ContainsKey(item.emotion))
+            {
+                emotionCount[item.emotion] = 0;
+            }
+            emotionCount[item.emotion]++;
+        }
+
+        // ìµœë¹ˆê°’(ê°€ì¥ ë§ì´ ë“±ì¥í•œ ê°ì •) ì°¾ê¸°
+        ConsumeEmotion mostFrequent = ConsumeEmotion.Normal;
+        int maxCount = 0;
+
+        foreach (var kvp in emotionCount)
+        {
+            if (kvp.Value > maxCount)
+            {
+                maxCount = kvp.Value;
+                mostFrequent = kvp.Key;
+            }
+        }
+
+        Debug.Log($"[{date:yyyy-MM-dd}] ê°ì • ì§‘ê³„ ê²°ê³¼: {string.Join(", ", emotionCount.Select(x => $"{x.Key}={x.Value}"))} â†’ ìµœì¢…: {mostFrequent}");
+
+        return mostFrequent;
+    }
+
+    // íŠ¹ì • ë‚ ì§œì˜ ì†Œë¹„ê°ì • ì—…ë°ì´íŠ¸
+    public void UpdateDailyEmotion(DateTime date, ConsumeEmotion emotion)
+    {
+        DateTime targetDate = date.Date;
+        bool updated = false;
+
+        // í•´ë‹¹ ë‚ ì§œì˜ ëª¨ë“  í•­ëª©ì— ê°ì • ì ìš©
+        foreach (var item in expenditure)
+        {
+            if (item.date.Date == targetDate)
+            {
+                item.emotion = emotion;
+                updated = true;
+            }
+        }
+
+        if (updated)
+        {
+            Debug.Log($"[{date:yyyy-MM-dd}] ê°ì • ì—…ë°ì´íŠ¸ ì™„ë£Œ: {emotion}");
+        }
+    }
+
+    #endregion
+
+    #region - ì´ ì¶œê¸ˆ/ì…ê¸ˆ ë‚´ì—­ ê³„ì‚°
     public int DailyTotalAmount(DateTime targetDate)
     {
-        Debug.Log($"=== DailyTotalAmount ½ÃÀÛ ===");
-        Debug.Log($"Á¶È¸ ³¯Â¥: {targetDate:yyyy-MM-dd}");
-        Debug.Log($"ÀüÃ¼ µ¥ÀÌÅÍ °Ç¼ö: {expenditure?.Count ?? 0}");
+       // Debug.Log($"=== DailyTotalAmount ì‹œì‘ ===");
+       // Debug.Log($"ì¡°íšŒ ë‚ ì§œ: {targetDate:yyyy-MM-dd}");
+       // Debug.Log($"ì „ì²´ ë°ì´í„° ê±´ìˆ˜: {expenditure?.Count ?? 0}");
 
         if (expenditure == null || expenditure.Count == 0)
         {
-            Debug.LogError("expenditure ¸®½ºÆ®°¡ ºñ¾îÀÖÀ½!");
+            Debug.LogError("expenditure ë¦¬ìŠ¤íŠ¸ê°€ ë¹„ì–´ìˆìŒ!");
             return 0;
         }
 
-        // ÀüÃ¼ µ¥ÀÌÅÍ Áß Ã³À½ 5°³ Ãâ·Â
-        Debug.Log("--- ÀüÃ¼ µ¥ÀÌÅÍ »ùÇÃ ---");
+        // ì „ì²´ ë°ì´í„° ì¤‘ ì²˜ìŒ 5ê°œ ì¶œë ¥
+      //  Debug.Log("--- ì „ì²´ ë°ì´í„° ìƒ˜í”Œ ---");
         foreach (var e in expenditure.Take(5))
         {
-            Debug.Log($"  {e.date:yyyy-MM-dd} | {e.expendituredetails}¿ø");
+          //  Debug.Log($"  {e.date:yyyy-MM-dd} | {e.expendituredetails}ì›");
         }
 
         DateTime day = targetDate.Date;
         var list = expenditure.Where(e => e.date.Date == day).ToList();
 
-        Debug.Log($"¸ÅÄªµÈ °Ç¼ö: {list.Count}");
+     //   Debug.Log($"ë§¤ì¹­ëœ ê±´ìˆ˜: {list.Count}");
 
         foreach (var e in list)
         {
-            Debug.Log($"  [¸ÅÄª] {e.date:yyyy-MM-dd} {e.time} | {e.expendituredetails}¿ø | {e.storename}");
+        //    Debug.Log($"  [ë§¤ì¹­] {e.date:yyyy-MM-dd} {e.time} | {e.expendituredetails}ì› | {e.storename}");
         }
 
         int totalSum = list.Sum(e => e.expendituredetails);
-        Debug.Log($"ÇÕ°è: {totalSum}¿ø");
+     //   Debug.Log($"í•©ê³„: {totalSum}ì›");
 
         return totalSum;
     }
 
     #endregion
 
-    #region - ¿ùº° ÃÑ ÁöÃâ °è»ê
+    #region - ì›”ë³„ ì´ ì§€ì¶œ ê³„ì‚°
     public int MonthlyTotalAmount(int year, int month)
     {
         if(expenditure == null || expenditure.Count == 0)
         {
-            Debug.LogError("expenditure ¸®½ºÆ®°¡ ºñ¾îÀÖÀ½!");
+            Debug.LogError("expenditure ë¦¬ìŠ¤íŠ¸ê°€ ë¹„ì–´ìˆìŒ!");
             return 0;
 
         }
@@ -239,7 +370,7 @@ public class CSVReader : MonoBehaviour
 
         int totalSum = monthlyList.Sum(e => e.expendituredetails);
 
-        Debug.Log($"{year}³â {month}¿ù ÃÑ ÁöÃâ: {totalSum}¿ø ({monthlyList.Count}°Ç)");
+        Debug.Log($"{year}ë…„ {month}ì›” ì´ ì§€ì¶œ: {totalSum}ì› ({monthlyList.Count}ê±´)");
 
         return totalSum;
     }

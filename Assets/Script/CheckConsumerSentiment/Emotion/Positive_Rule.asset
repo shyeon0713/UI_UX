@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9c9b309f631d994a9906c27041fee71, type: 3}
+  m_Name: Positive_Rule
+  m_EditorClassIdentifier: 
+  emotionType: 1
+  keywords:
+  - "\uB9CC\uC871"
+  - "\uB9CC\uC871\uC2A4\uB7FD\uB2E4"
+  - "\uC798 \uC0C0\uB2E4"
+  - "\uC88B\uC740 \uC120\uD0DD"
+  - "\uD544\uC694\uD588\uB2E4"
+  - "\uC720\uC6A9\uD558\uB2E4"
+  - "\uAC00\uC131\uBE44"
+  - "\uD569\uB9AC\uC801"
+  - "\uD589\uBCF5\uD558\uB2E4"
+  - "\uAE30\uBD84 \uC88B\uB2E4"
+  - "\uB9C8\uC74C\uC5D0 \uB4E0\uB2E4"
+  - "\uC624\uB798 \uC4F8 \uAC83 \uAC19\uB2E4"
+  - "\uAC00\uCE58 \uC788\uB2E4"
+  - "\uCD94\uCC9C\uD558\uACE0 \uC2F6\uB2E4"
+  - "\uD3B8\uB9AC\uD558\uB2E4"
+  - "\uB3C4\uC6C0\uC774 \uB410\uB2E4."
+  - "\uD6C4\uD68C \uC5C6\uB2E4"
+  - "\uC131\uACF5\uC801\uC778 \uC18C\uBE44"
+  - "\uAF2D \uD544\uC694\uD588\uB2E4"
+  - "\uC88B\uC544\uC11C \uC0C0\uB2E4"

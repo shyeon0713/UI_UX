@@ -1,7 +1,7 @@
 ﻿using System;  //DateTime 사용
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -33,6 +33,14 @@ public class CalenderUI : MonoBehaviour
 
     public CSVReader csvreader;  //지출내역 가져오기
 
+    [Header("Voice Emotion UI")]
+     public VoiceEmotionInputUI voiceEmotionUI;
+
+    // 감정 입력 중인 날짜
+    private DateTime selectedEmotionDate;
+
+
+    public EmotionClassifier emotionClassifier;
 
     private DateTime currentDate;  // 현재 표시 중인 년/월
     // using System;
@@ -109,6 +117,35 @@ public class CalenderUI : MonoBehaviour
     }
     #endregion
 
+    // 해당 월의 감정 데이터 로그 출력
+    private void LogEmotionDataForMonth(DateTime date)
+    {
+        if (CSVReader.Instance?.expenditure == null)
+        {
+            Debug.LogError("[CalenderUI] CSV 데이터가 없습니다");
+            return;
+        }
+
+        var monthData = CSVReader.Instance.expenditure
+            .Where(e => e.date.Year == date.Year && e.date.Month == date.Month)
+            .ToList();
+
+        Debug.Log($"[CalenderUI] {date:yyyy년 MM월} 데이터: 총 {monthData.Count}건");
+
+        var emotionGroups = monthData.GroupBy(e => e.emotion);
+        foreach (var group in emotionGroups)
+        {
+            Debug.Log($"[CalenderUI] {date:yyyy년 MM월} 감정 통계 - {group.Key}: {group.Count()}건");
+
+            // 각 감정별로 처음 3개 항목 출력
+            foreach (var item in group.Take(3))
+            {
+                Debug.Log($"  - {item.date:MM/dd} | {item.storename} | {item.emotion}");
+            }
+        }
+    }
+
+
     #region - 캘린더 버튼 배치
     void GenerateCalender(DateTime date)
     {
@@ -151,7 +188,7 @@ public class CalenderUI : MonoBehaviour
             CalenderDayCell cell = btn.GetComponent<CalenderDayCell>();
             if (cell != null)
             {
-                cell.Setup(0, 0, false);  // 날짜 0, 금액 0, 버튼 비활성화
+                cell.Setup(0, 0, ConsumeEmotion.Normal, false);  // 날짜 0, 금액 0, 버튼 비활성화 -> 스프라이트도 기본 스프라이트
             }
             Image btnImage = btn.GetComponent<Image>();
             if (btnImage != null)
@@ -168,32 +205,63 @@ public class CalenderUI : MonoBehaviour
             var btn = pool[index];
             btn.gameObject.SetActive(true);
 
+            CalenderDayCell cell = btn.GetComponent<CalenderDayCell>();
+            DateTime current = new DateTime(date.Year, date.Month, day);
 
-            CalenderDayCell cell = btn.GetComponent<CalenderDayCell>();  // DayCell 함수가져오기
+            int dailySum = CSVReader.Instance.DailyTotalAmount(current);
 
-            if (cell != null) //cell이 null이 아닐 경우
+            // CSVReader에서 감정 조회 (수정)
+            ConsumeEmotion emotion = CSVReader.Instance.GetDailyEmotion(current);
+
+            // 디버그 로그 추가
+            if (day <= 5 || emotion != ConsumeEmotion.Normal)
             {
-                DateTime Currentdate = new DateTime(date.Year, date.Month, day);  //년월일이 확인을 위해 현재 날짜 확인
-
-                int dailySum = CSVReader.Instance.DailyTotalAmount(Currentdate);
-                //static은 개인변수를 통해서 접근이 불가능 -> CSVReader를 사용
-                yearText.text = Currentdate.Year.ToString();
-                //Setup 함수 호출
-                cell.Setup(day, dailySum, true);
-
-                //클릭 이벤트 연결
-                cell.AddListener((clickedDay) =>
-                {
-
-                });
+                Debug.Log($"[GenerateCalender] {current:yyyy-MM-dd} | 금액: {dailySum}원 | 감정: {emotion}");
             }
+
+            // Setup에 감정 정보 전달
+            cell.Setup(day, dailySum, emotion, true);
+
+            // 날짜 클릭 처리
+            int capturedDailySum = dailySum;  // 람다 캡처용
+
+            cell.AddListener((clickedDay) =>
+            {
+                DateTime clickedDate = new DateTime(date.Year, date.Month, clickedDay);
+
+                // 지출 없는 날은 감정 입력 X
+                if (capturedDailySum <= 0)
+                    return;
+
+                // CSVReader로 확인 (수정)
+                ConsumeEmotion currentEmotion = CSVReader.Instance.GetDailyEmotion(clickedDate);
+                if (currentEmotion != ConsumeEmotion.Normal)
+                    return;
+
+                selectedEmotionDate = clickedDate;
+                Debug.Log("[FLOW] Open Voice Emotion UI : " + clickedDate);
+                voiceEmotionUI.Open(clickedDate, OnVoiceEmotionResult);
+            });
+
             index++;
         }
-
-           
     }
     #endregion
+    private void OnVoiceEmotionResult(DateTime date, string text)
+    {
+        ConsumeEmotion emotion = emotionClassifier.Classify(text);
+        Debug.Log($"[OnVoiceEmotionResult] 감정 분류 결과: {emotion}");
 
+        // CSV에 감정 업데이트
+        CSVReader.Instance.UpdateDailyEmotion(date, emotion);
+
+        Debug.Log($"[OnVoiceEmotionResult] 캘린더 갱신 시작");
+
+        // 캘린더 UI 갱신
+        GenerateCalender(currentDate);
+
+        Debug.Log($"[OnVoiceEmotionResult] 완료");
+    }
 
     private Dictionary<CategoryType, int> GetMonthlyCategoryTotals(int year, int month)
     {
