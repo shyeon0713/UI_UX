@@ -33,9 +33,9 @@ public class CalenderUI : MonoBehaviour
 
     public CSVReader csvreader;  //지출내역 가져오기
 
-    [Header("Voice Emotion UI")]
+    [Header("Ref UI")]
      public VoiceEmotionInputUI voiceEmotionUI;
-
+     public ReminderUI reminderUI;
     // 감정 입력 중인 날짜
     private DateTime selectedEmotionDate;
 
@@ -150,11 +150,11 @@ public class CalenderUI : MonoBehaviour
     void GenerateCalender(DateTime date)
     {
         monthText.text = $"{date.Month + "월"}";  // 월 표시
-       // yearText.text = date.Year.ToString(); //년 표시 -> 수정
-        // 추후에 문자형식으로 변경
+                                                 // yearText.text = date.Year.ToString(); //년 표시 -> 수정
+                                                 // 추후에 문자형식으로 변경
 
         int monthlyTotal = CSVReader.Instance.MonthlyTotalAmount(date.Year, date.Month);
-       
+
         // 월 총 지출 계산 및 표시
         monthlyTotalText.text = $" -{monthlyTotal:N0}원";
 
@@ -167,7 +167,7 @@ public class CalenderUI : MonoBehaviour
 
         var monthlyCategoryTotals = GetMonthlyCategoryTotals(date.Year, date.Month);
         bubbleDiagram.UpdateDiagram(monthlyCategoryTotals);
-        
+
 
 
         DateTime firstday = new DateTime(date.Year, date.Month, 1);  //���۳�¥
@@ -225,25 +225,28 @@ public class CalenderUI : MonoBehaviour
             // 날짜 클릭 처리
             int capturedDailySum = dailySum;  // 람다 캡처용
 
+            // 롱프레스 콜백 (Voice UI)
             cell.AddListener((clickedDay) =>
             {
                 DateTime clickedDate = new DateTime(date.Year, date.Month, clickedDay);
+                if (capturedDailySum <= 0) return;
 
-                // 지출 없는 날은 감정 입력 X
-                if (capturedDailySum <= 0)
-                    return;
-
-                // CSVReader로 확인 (수정)
                 ConsumeEmotion currentEmotion = CSVReader.Instance.GetDailyEmotion(clickedDate);
-                if (currentEmotion != ConsumeEmotion.Normal)
-                    return;
+                if (currentEmotion != ConsumeEmotion.Normal) return;
 
                 selectedEmotionDate = clickedDate;
                 Debug.Log("[FLOW] Open Voice Emotion UI : " + clickedDate);
                 voiceEmotionUI.Open(clickedDate, OnVoiceEmotionResult);
-            });
+            },
+            // 숏클릭 콜백 (리마인더 UI) 
+            (clickedDay) =>
+            {
+                DateTime clickedDate = new DateTime(date.Year, date.Month, clickedDay);
+                Debug.Log("[FLOW] Open Reminder UI : " + clickedDate);
+                index++;
+            }
+             );
 
-            index++;
         }
     }
     #endregion

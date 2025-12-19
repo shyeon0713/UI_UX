@@ -100,7 +100,7 @@ public class VoiceEmotionInputUI : MonoBehaviour
 
             case VoiceUIState.Processing:
                 statusText.text = "음성을 텍스트로 변환 중입니다…";
-                statusIcon.sprite = idleSprite;
+                statusIcon.sprite = processingSprite;
                 startVoiceButton.interactable = false;
                 break;
         }
