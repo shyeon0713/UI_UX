@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -10,19 +11,20 @@ public class ReminderUI : MonoBehaviour
     public GameObject reminderPanel;
     public Button closeButton;
 
+    [Header("Calendar")]
+    public TMP_Text monthYearText;   // 상단에 월일 표시
+
     [Header("Toggle Item")]
     public GameObject toggleItemPrefab;  // ToggleItem 프리팹
-    public Transform toggleContainer;    // ScrollView Content
-
-    [Header("Image View")]
-    public GameObject imageViewPanel;    // 이미지 확대 패널
-    public Image fullscreenImage;        // 확대된 이미지
-    public Button imageCloseButton;
+    public Transform toggleContainer;    // Toggle Content
 
     [Header("Map View")]
-    public GameObject mapViewPanel;      // 지도 패널
-    public RawImage mapImage;            // Google Maps 이미지
+    public GameObject mapViewPanel;
+    public RawImage mapImage;
     public Button mapCloseButton;
+
+    [Header("Other UI")]
+    public GameObject calenderUI;  //  CalenderUI 참조
 
     private DateTime currentDate;
     private List<string> currentImagePaths = new List<string>();
@@ -30,18 +32,27 @@ public class ReminderUI : MonoBehaviour
     void Start()
     {
         closeButton.onClick.AddListener(Close);
-        imageCloseButton.onClick.AddListener(CloseImageView);
         mapCloseButton.onClick.AddListener(CloseMapView);
 
         reminderPanel.SetActive(false);
-        imageViewPanel.SetActive(false);
         mapViewPanel.SetActive(false);
     }
 
     public void Open(DateTime date)
     {
         currentDate = date;
+
+        // CalenderUI 비활성화
+        if (calenderUI != null)
+        {
+            calenderUI.SetActive(false);
+            Debug.Log($"[ReminderUI] CalenderUI 비활성화");
+        }
+
         reminderPanel.SetActive(true);
+
+        // 상단 년/월 표시
+        monthYearText.text = $"{date.Year} {date.Month}월";
 
         // 권한 요청 후 데이터 로드
         MediaStoreManager.Instance.RequestPermission((granted) =>
@@ -67,7 +78,10 @@ public class ReminderUI : MonoBehaviour
 
         // CSV에서 해당 날짜 지출 내역 가져오기
         var dayExpenditures = CSVReader.Instance.expenditure
-            .FindAll(e => e.date.Date == date.Date);
+            .FindAll(e => e.date.Date == date.Date)
+            .OrderBy(e => e.date)  // 시간순 정렬
+            .ToList();
+
 
         if (dayExpenditures.Count == 0)
         {
@@ -75,60 +89,93 @@ public class ReminderUI : MonoBehaviour
             return;
         }
 
+        // 총 소비 금액 계산
+        int totalAmount = dayExpenditures.Sum(e => e.expendituredetails);
+
+        // 첫 번째 가맹점명
+        string firstStoreName = dayExpenditures[0].storename;
+
+
         // MediaStore에서 이미지 가져오기
         currentImagePaths = MediaStoreManager.Instance.GetImagesByDate(date);
         Debug.Log($"[ReminderUI] 이미지 {currentImagePaths.Count}개 발견");
 
-        // 각 지출 내역에 대해 토글 아이템 생성
-        foreach (var expenditure in dayExpenditures)
-        {
-            GameObject item = Instantiate(toggleItemPrefab, toggleContainer);
-            ReminderToggleItem toggleItem = item.GetComponent<ReminderToggleItem>();
+        Debug.Log($"[ReminderUI] 토글 아이템 생성 시작");
+        Debug.Log($"[ReminderUI] toggleItemPrefab: {toggleItemPrefab != null}");
+        Debug.Log($"[ReminderUI] toggleContainer: {toggleContainer != null}");
 
-            toggleItem.Setup(
-                expenditure,
-                currentImagePaths,
-                OnImageClicked
-            );
+
+        GameObject item = Instantiate(toggleItemPrefab, toggleContainer);
+
+        if (item == null)
+        {
+            Debug.LogError($"[ReminderUI] 토글 아이템 생성 실패!");
+            return;
         }
+
+        ReminderToggleItem toggleItem = item.GetComponent<ReminderToggleItem>();
+
+        if (toggleItem == null)
+        {
+            Debug.LogError($"[ReminderUI] ReminderToggleItem 컴포넌트 없음!");
+            return;
+        }
+
+        toggleItem.Setup(
+            date,
+            totalAmount,
+            firstStoreName,
+            currentImagePaths,
+            OnImageClicked
+         );
     }
 
     // 이미지 클릭 시 확대 표시
-    private void OnImageClicked(Texture2D texture, string imagePath)
+    private void OnImageClicked(string imagePath)
     {
-        imageViewPanel.SetActive(true);
-        fullscreenImage.sprite = Sprite.Create(
-            texture,
-            new Rect(0, 0, texture.width, texture.height),
-            new Vector2(0.5f, 0.5f)
-        );
+        Debug.Log($"[ReminderUI] 이미지 클릭: {imagePath}");
 
-        // 이미지에 클릭 이벤트 추가 (GPS → Map)
-        Button imageButton = fullscreenImage.gameObject.GetComponent<Button>();
-        if (imageButton == null)
-            imageButton = fullscreenImage.gameObject.AddComponent<Button>();
+        // EXIF에서 GPS 추출
+        var gps = ExtractGPSFromImage(imagePath);
 
-        imageButton.onClick.RemoveAllListeners();
-        imageButton.onClick.AddListener(() => ShowMapFromGPS(imagePath));
+        if (gps.HasValue)
+        {
+            ShowMapFromGPS(gps.Value.latitude, gps.Value.longitude);
+        }
+        else
+        {
+            Debug.LogWarning("[ReminderUI] GPS 정보 없음");
+            // 더미 좌표 (테스트용)
+            ShowMapFromGPS(37.5665f, 126.9780f);
+        }
+    }
+    // EXIF GPS 추출 (간단 구현)
+    private (float latitude, float longitude)? ExtractGPSFromImage(string imagePath)
+    {
+        // TODO: ExifLib 또는 MetadataExtractor 라이브러리 사용
+        // 현재는 더미 데이터 반환
+        Debug.Log($"[ReminderUI] GPS 추출 시도: {imagePath}");
+
+        // 임시: 서울 좌표
+        return (37.5665f, 126.9780f);
     }
 
-    private void ShowMapFromGPS(string imagePath)
+    private void ShowMapFromGPS(float lat, float lon)
     {
-        // TODO: EXIF에서 GPS 추출 후 Google Maps 표시
-        Debug.Log($"[ReminderUI] GPS 지도 표시: {imagePath}");
-
-        // 임시: 더미 좌표
-        float latitude = 37.5665f;  // 서울
-        float longitude = 126.9780f;
-
-        StartCoroutine(LoadGoogleMapsImage(latitude, longitude));
+        StartCoroutine(LoadGoogleMapsImage(lat, lon));
     }
 
     private IEnumerator LoadGoogleMapsImage(float lat, float lon)
     {
-        string apiKey = "YOUR_GOOGLE_MAPS_API_KEY";
+        string apiKey = "";  //AIzaSyDq0WtWg-wFqkANbAGso2Ku1mbRSqJeL4U
+        //커밋할 때는 키 지우기
+        int zoom = 15;
+        int width = 600;
+        int height = 400;
+
         string url = $"https://maps.googleapis.com/maps/api/staticmap?" +
-                     $"center={lat},{lon}&zoom=15&size=600x400&markers=color:red%7C{lat},{lon}" +
+                     $"center={lat},{lon}&zoom={zoom}&size={width}x{height}" +
+                     $"&markers=color:red%7C{lat},{lon}" +
                      $"&key={apiKey}";
 
         UnityEngine.Networking.UnityWebRequest www =
@@ -151,11 +198,13 @@ public class ReminderUI : MonoBehaviour
     public void Close()
     {
         reminderPanel.SetActive(false);
-    }
 
-    private void CloseImageView()
-    {
-        imageViewPanel.SetActive(false);
+        //CalenderUI 다시 활성화
+        if (calenderUI != null)
+        {
+            calenderUI.SetActive(true);
+            Debug.Log($"[ReminderUI] CalenderUI 활성화");
+        }
     }
 
     private void CloseMapView()
@@ -163,3 +212,4 @@ public class ReminderUI : MonoBehaviour
         mapViewPanel.SetActive(false);
     }
 }
+

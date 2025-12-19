@@ -243,9 +243,19 @@ public class CalenderUI : MonoBehaviour
             {
                 DateTime clickedDate = new DateTime(date.Year, date.Month, clickedDay);
                 Debug.Log("[FLOW] Open Reminder UI : " + clickedDate);
-                index++;
+
+                // ReminderUI 열기
+                if (reminderUI != null)
+                {
+                    reminderUI.Open(clickedDate);
+                }
+                else
+                {
+                    Debug.LogError("[CalenderUI] ReminderUI가 연결되지 않음!");
+                }
             }
-             );
+        );
+            index++;
 
         }
     }
