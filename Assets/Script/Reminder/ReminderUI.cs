@@ -12,10 +12,10 @@ public class ReminderUI : MonoBehaviour
     public Button closeButton;
 
     [Header("Calendar")]
-    public TMP_Text monthYearText;   // »ó´Ü¿¡ ¿ùÀÏ Ç¥½Ã
+    public TMP_Text monthYearText;   // ìƒë‹¨ì— ì›”ì¼ í‘œì‹œ
 
     [Header("Toggle Item")]
-    public GameObject toggleItemPrefab;  // ToggleItem ÇÁ¸®ÆÕ
+    public GameObject toggleItemPrefab;  // ToggleItem í”„ë¦¬íŒ¹
     public Transform toggleContainer;    // Toggle Content
 
     [Header("Map View")]
@@ -24,7 +24,7 @@ public class ReminderUI : MonoBehaviour
     public Button mapCloseButton;
 
     [Header("Other UI")]
-    public GameObject calenderUI;  //  CalenderUI ÂüÁ¶
+    public GameObject calenderUI;  //  CalenderUI ì°¸ì¡°
 
     private DateTime currentDate;
     private List<string> currentImagePaths = new List<string>();
@@ -42,19 +42,19 @@ public class ReminderUI : MonoBehaviour
     {
         currentDate = date;
 
-        // CalenderUI ºñÈ°¼ºÈ­
+        // CalenderUI ë¹„í™œì„±í™”
         if (calenderUI != null)
         {
             calenderUI.SetActive(false);
-            Debug.Log($"[ReminderUI] CalenderUI ºñÈ°¼ºÈ­");
+            Debug.Log($"[ReminderUI] CalenderUI ë¹„í™œì„±í™”");
         }
 
         reminderPanel.SetActive(true);
 
-        // »ó´Ü ³â/¿ù Ç¥½Ã
-        monthYearText.text = $"{date.Year} {date.Month}¿ù";
+        // ìƒë‹¨ ë…„/ì›” í‘œì‹œ
+        monthYearText.text = $"{date.Year} {date.Month}ì›”";
 
-        // ±ÇÇÑ ¿äÃ» ÈÄ µ¥ÀÌÅÍ ·Îµå
+        // ê¶Œí•œ ìš”ì²­ í›„ ë°ì´í„° ë¡œë“œ
         MediaStoreManager.Instance.RequestPermission((granted) =>
         {
             if (granted)
@@ -63,44 +63,44 @@ public class ReminderUI : MonoBehaviour
             }
             else
             {
-                Debug.LogError("[ReminderUI] ±ÇÇÑ °ÅºÎµÊ");
+                Debug.LogError("[ReminderUI] ê¶Œí•œ ê±°ë¶€ë¨");
             }
         });
     }
 
     private void LoadData(DateTime date)
     {
-        // ±âÁ¸ Åä±Û ¾ÆÀÌÅÛ Á¦°Å
+        // ê¸°ì¡´ í† ê¸€ ì•„ì´í…œ ì œê±°
         foreach (Transform child in toggleContainer)
         {
             Destroy(child.gameObject);
         }
 
-        // CSV¿¡¼­ ÇØ´ç ³¯Â¥ ÁöÃâ ³»¿ª °¡Á®¿À±â
+        // CSVì—ì„œ í•´ë‹¹ ë‚ ì§œ ì§€ì¶œ ë‚´ì—­ ê°€ì ¸ì˜¤ê¸°
         var dayExpenditures = CSVReader.Instance.expenditure
             .FindAll(e => e.date.Date == date.Date)
-            .OrderBy(e => e.date)  // ½Ã°£¼ø Á¤·Ä
+            .OrderBy(e => e.date)  // ì‹œê°„ìˆœ ì •ë ¬
             .ToList();
 
 
         if (dayExpenditures.Count == 0)
         {
-            Debug.Log($"[ReminderUI] {date:yyyy-MM-dd} ÁöÃâ ³»¿ª ¾øÀ½");
+            Debug.Log($"[ReminderUI] {date:yyyy-MM-dd} ì§€ì¶œ ë‚´ì—­ ì—†ìŒ");
             return;
         }
 
-        // ÃÑ ¼Òºñ ±İ¾× °è»ê
+        // ì´ ì†Œë¹„ ê¸ˆì•¡ ê³„ì‚°
         int totalAmount = dayExpenditures.Sum(e => e.expendituredetails);
 
-        // Ã¹ ¹øÂ° °¡¸ÍÁ¡¸í
+        // ì²« ë²ˆì§¸ ê°€ë§¹ì ëª…
         string firstStoreName = dayExpenditures[0].storename;
 
 
-        // MediaStore¿¡¼­ ÀÌ¹ÌÁö °¡Á®¿À±â
+        // MediaStoreì—ì„œ ì´ë¯¸ì§€ ê°€ì ¸ì˜¤ê¸°
         currentImagePaths = MediaStoreManager.Instance.GetImagesByDate(date);
-        Debug.Log($"[ReminderUI] ÀÌ¹ÌÁö {currentImagePaths.Count}°³ ¹ß°ß");
+        Debug.Log($"[ReminderUI] ì´ë¯¸ì§€ {currentImagePaths.Count}ê°œ ë°œê²¬");
 
-        Debug.Log($"[ReminderUI] Åä±Û ¾ÆÀÌÅÛ »ı¼º ½ÃÀÛ");
+        Debug.Log($"[ReminderUI] í† ê¸€ ì•„ì´í…œ ìƒì„± ì‹œì‘");
         Debug.Log($"[ReminderUI] toggleItemPrefab: {toggleItemPrefab != null}");
         Debug.Log($"[ReminderUI] toggleContainer: {toggleContainer != null}");
 
@@ -109,7 +109,7 @@ public class ReminderUI : MonoBehaviour
 
         if (item == null)
         {
-            Debug.LogError($"[ReminderUI] Åä±Û ¾ÆÀÌÅÛ »ı¼º ½ÇÆĞ!");
+            Debug.LogError($"[ReminderUI] í† ê¸€ ì•„ì´í…œ ìƒì„± ì‹¤íŒ¨!");
             return;
         }
 
@@ -117,7 +117,7 @@ public class ReminderUI : MonoBehaviour
 
         if (toggleItem == null)
         {
-            Debug.LogError($"[ReminderUI] ReminderToggleItem ÄÄÆ÷³ÍÆ® ¾øÀ½!");
+            Debug.LogError($"[ReminderUI] ReminderToggleItem ì»´í¬ë„ŒíŠ¸ ì—†ìŒ!");
             return;
         }
 
@@ -130,12 +130,12 @@ public class ReminderUI : MonoBehaviour
          );
     }
 
-    // ÀÌ¹ÌÁö Å¬¸¯ ½Ã È®´ë Ç¥½Ã
+    // ì´ë¯¸ì§€ í´ë¦­ ì‹œ í™•ëŒ€ í‘œì‹œ
     private void OnImageClicked(string imagePath)
     {
-        Debug.Log($"[ReminderUI] ÀÌ¹ÌÁö Å¬¸¯: {imagePath}");
+        Debug.Log($"[ReminderUI] ì´ë¯¸ì§€ í´ë¦­: {imagePath}");
 
-        // EXIF¿¡¼­ GPS ÃßÃâ
+        // EXIFì—ì„œ GPS ì¶”ì¶œ
         var gps = ExtractGPSFromImage(imagePath);
 
         if (gps.HasValue)
@@ -144,19 +144,19 @@ public class ReminderUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[ReminderUI] GPS Á¤º¸ ¾øÀ½");
-            // ´õ¹Ì ÁÂÇ¥ (Å×½ºÆ®¿ë)
+            Debug.LogWarning("[ReminderUI] GPS ì •ë³´ ì—†ìŒ");
+            // ë”ë¯¸ ì¢Œí‘œ (í…ŒìŠ¤íŠ¸ìš©)
             ShowMapFromGPS(37.5665f, 126.9780f);
         }
     }
-    // EXIF GPS ÃßÃâ (°£´Ü ±¸Çö)
+    // EXIF GPS ì¶”ì¶œ (ê°„ë‹¨ êµ¬í˜„)
     private (float latitude, float longitude)? ExtractGPSFromImage(string imagePath)
     {
-        // TODO: ExifLib ¶Ç´Â MetadataExtractor ¶óÀÌºê·¯¸® »ç¿ë
-        // ÇöÀç´Â ´õ¹Ì µ¥ÀÌÅÍ ¹İÈ¯
-        Debug.Log($"[ReminderUI] GPS ÃßÃâ ½Ãµµ: {imagePath}");
+        // TODO: ExifLib ë˜ëŠ” MetadataExtractor ë¼ì´ë¸ŒëŸ¬ë¦¬ ì‚¬ìš©
+        // í˜„ì¬ëŠ” ë”ë¯¸ ë°ì´í„° ë°˜í™˜
+        Debug.Log($"[ReminderUI] GPS ì¶”ì¶œ ì‹œë„: {imagePath}");
 
-        // ÀÓ½Ã: ¼­¿ï ÁÂÇ¥
+        // ì„ì‹œ: ì„œìš¸ ì¢Œí‘œ
         return (37.5665f, 126.9780f);
     }
 
@@ -167,8 +167,7 @@ public class ReminderUI : MonoBehaviour
 
     private IEnumerator LoadGoogleMapsImage(float lat, float lon)
     {
-        string apiKey = "";  //AIzaSyDq0WtWg-wFqkANbAGso2Ku1mbRSqJeL4U
-        //Ä¿¹ÔÇÒ ¶§´Â Å° Áö¿ì±â
+     
         int zoom = 15;
         int width = 600;
         int height = 400;
@@ -191,7 +190,7 @@ public class ReminderUI : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"[ReminderUI] Map ·Îµå ½ÇÆĞ: {www.error}");
+            Debug.LogError($"[ReminderUI] Map ë¡œë“œ ì‹¤íŒ¨: {www.error}");
         }
     }
 
@@ -199,11 +198,11 @@ public class ReminderUI : MonoBehaviour
     {
         reminderPanel.SetActive(false);
 
-        //CalenderUI ´Ù½Ã È°¼ºÈ­
+        //CalenderUI ë‹¤ì‹œ í™œì„±í™”
         if (calenderUI != null)
         {
             calenderUI.SetActive(true);
-            Debug.Log($"[ReminderUI] CalenderUI È°¼ºÈ­");
+            Debug.Log($"[ReminderUI] CalenderUI í™œì„±í™”");
         }
     }
 
